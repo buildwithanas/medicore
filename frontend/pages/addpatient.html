@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-Frame-Options" content="DENY" />
+  <title>MediCore HMS — Add Patient</title>
+  <link rel="stylesheet" href="../css/main.css" />
+  <style>
+    .step-bar { display:flex; gap:0; margin-bottom:32px; }
+    .step {
+      flex:1; display:flex; flex-direction:column; align-items:center; gap:6px;
+      position:relative; cursor:pointer;
+    }
+    .step:not(:last-child)::after {
+      content:''; position:absolute; top:17px; left:calc(50% + 18px); right:calc(-50% + 18px);
+      height:2px; background:var(--border);
+      transition: background .3s;
+    }
+    .step.done:not(:last-child)::after { background: var(--teal); }
+    .step-circle {
+      width:34px; height:34px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      border:2px solid var(--border); background:var(--navy3);
+      font-size:.8rem; font-weight:600; color:var(--muted);
+      transition:all .25s; z-index:1;
+    }
+    .step.active .step-circle { border-color:var(--teal); background:var(--teal-dim); color:var(--teal2); }
+    .step.done   .step-circle { border-color:var(--teal); background:var(--teal); color:white; }
+    .step-label { font-size:.7rem; color:var(--muted); text-align:center; transition:color .25s; }
+    .step.active .step-label { color:var(--teal2); }
+    .step.done   .step-label { color:var(--teal); }
+
+    .step-content { display:none; }
+    .step-content.active { display:block; animation:fadeUp .35s both; }
+
+    .section-title {
+      font-size:.78rem; text-transform:uppercase; letter-spacing:.1em;
+      color:var(--teal); margin-bottom:16px; padding-bottom:8px;
+      border-bottom:1px solid var(--border); font-weight:600;
+    }
+    .input-icon-wrap { position:relative; }
+    .input-icon-wrap svg { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--muted); pointer-events:none; }
+    .input-icon-wrap .form-control { padding-left:38px; }
+
+    .nav-btns { display:flex; justify-content:space-between; margin-top:28px; padding-top:20px; border-top:1px solid var(--border); }
+
+    .preview-card {
+      background:rgba(255,255,255,.03); border:1px solid var(--border);
+      border-radius:12px; padding:20px; margin-bottom:16px;
+    }
+    .preview-row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); font-size:.85rem; }
+    .preview-row:last-child { border-bottom:none; }
+    .preview-label { color:var(--muted2); }
+    .preview-val   { color:var(--white); font-weight:500; }
+  </style>
+</head>
+<body>
+
+<div class="sidebar-overlay" id="overlay"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" width="20" height="20">
+        <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+      </svg>
+    </div>
+    <div class="brand-text">
+      <div class="name">MediCore</div>
+      <div class="sub">HMS v2.4</div>
+    </div>
+  </div>
+
+  <div class="sidebar-section">Main</div>
+  <a class="nav-item" data-page="dashboard.html"  href="dashboard.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    Dashboard
+  </a>
+  <a class="nav-item active" data-page="patients.html" href="patients.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    Patients
+  </a>
+  <a class="nav-item" data-page="appointments.html" href="appointments.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    Appointments
+  </a>
+  <a class="nav-item" data-page="records.html" href="records.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+    Medical Records
+  </a>
+  <a class="nav-item" data-page="doctors.html" href="doctors.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    Doctors
+  </a>
+  <div class="sidebar-section">System</div>
+  <a class="nav-item" data-page="settings.html" href="settings.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    Settings
+  </a>
+
+  <div class="sidebar-footer">
+    <div class="user-card" data-logout>
+      <div class="avatar-user" id="user-initials">—</div>
+      <div class="user-info">
+        <div class="uname" id="user-name">Loading…</div>
+        <div class="urole" id="user-role">—</div>
+      </div>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    </div>
+  </div>
+</aside>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <button class="hamburger" id="hamburger" aria-label="Menu">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <div style="display:flex;align-items:center;gap:10px">
+    <a href="patients.html" style="color:var(--muted);display:flex;align-items:center;gap:4px;font-size:.82rem;text-decoration:none;transition:color .2s" onmouseover="this.style.color='var(--white)'" onmouseout="this.style.color='var(--muted)'">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      Patients
+    </a>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    <div class="topbar-title" id="page-mode-title">Add New Patient</div>
+  </div>
+  <div class="topbar-actions" style="margin-left:auto">
+    <div class="date-chip" id="datechip"></div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main class="main">
+
+  <div style="max-width:860px;margin:0 auto">
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;animation:fadeUp .4s both">
+      <div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--white);margin-bottom:4px" id="form-heading">Add New Patient</h2>
+        <p style="font-size:.82rem;color:var(--muted)" id="form-subheading">Fill in the patient information across all steps</p>
+      </div>
+      <div style="display:flex;gap:4px">
+        <span class="badge badge-teal" id="edit-badge" style="display:none">Edit Mode</span>
+      </div>
+    </div>
+
+    <!-- Step Bar -->
+    <div class="step-bar" id="stepBar">
+      <div class="step active" data-step="1">
+        <div class="step-circle">1</div>
+        <div class="step-label">Personal</div>
+      </div>
+      <div class="step" data-step="2">
+        <div class="step-circle">2</div>
+        <div class="step-label">Medical</div>
+      </div>
+      <div class="step" data-step="3">
+        <div class="step-circle">3</div>
+        <div class="step-label">Contact</div>
+      </div>
+      <div class="step" data-step="4">
+        <div class="step-circle">4</div>
+        <div class="step-label">Review</div>
+      </div>
+    </div>
+
+    <!-- STEP 1: Personal Info -->
+    <div class="panel step-content active" id="step-1">
+      <div class="section-title">Personal Information</div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">First Name *</label>
+          <input type="text" class="form-control" id="f-firstName" placeholder="e.g. Fatima" maxlength="50" />
+          <div class="form-error" id="e-firstName">First name is required.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last Name *</label>
+          <input type="text" class="form-control" id="f-lastName" placeholder="e.g. Al-Hassan" maxlength="50" />
+          <div class="form-error" id="e-lastName">Last name is required.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date of Birth *</label>
+          <input type="date" class="form-control" id="f-dob" />
+          <div class="form-error" id="e-dob">Date of birth is required.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sex *</label>
+          <select class="form-control" id="f-sex">
+            <option value="">Select…</option>
+            <option>Male</option>
+            <option>Female</option>
+            <option>Other</option>
+          </select>
+          <div class="form-error" id="e-sex">Please select a sex.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Marital Status</label>
+          <select class="form-control" id="f-marital">
+            <option value="">Select…</option>
+            <option>Single</option><option>Married</option><option>Divorced</option><option>Widowed</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nationality</label>
+          <input type="text" class="form-control" id="f-nationality" placeholder="e.g. Nigerian" maxlength="40" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Occupation</label>
+          <input type="text" class="form-control" id="f-occupation" placeholder="e.g. Teacher" maxlength="60" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Religion</label>
+          <select class="form-control" id="f-religion">
+            <option value="">Select…</option>
+            <option>Islam</option><option>Christianity</option><option>Other</option><option>Prefer not to say</option>
+          </select>
+        </div>
+      </div>
+      <div class="nav-btns">
+        <a href="patients.html" class="btn btn-secondary">← Cancel</a>
+        <button class="btn btn-primary" id="next-1">Next: Medical Info →</button>
+      </div>
+    </div>
+
+    <!-- STEP 2: Medical Info -->
+    <div class="panel step-content" id="step-2">
+      <div class="section-title">Medical Information</div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Blood Group *</label>
+          <select class="form-control" id="f-blood">
+            <option value="">Select…</option>
+            <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+            <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+          </select>
+          <div class="form-error" id="e-blood">Blood group is required.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Genotype</label>
+          <select class="form-control" id="f-genotype">
+            <option value="">Select…</option>
+            <option>AA</option><option>AS</option><option>SS</option><option>AC</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Admission Status *</label>
+          <select class="form-control" id="f-status">
+            <option value="">Select…</option>
+            <option value="admitted">Admitted</option>
+            <option value="outpatient">Outpatient</option>
+            <option value="emergency">Emergency</option>
+          </select>
+          <div class="form-error" id="e-status">Admission status is required.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ward / Department *</label>
+          <select class="form-control" id="f-ward">
+            <option value="">Select…</option>
+            <option>General A</option><option>General B</option><option>ICU</option>
+            <option>Maternity</option><option>Paediatrics</option><option>Orthopaedics</option>
+            <option>Neurology</option><option>Cardiology</option><option>Oncology</option><option>Emergency</option>
+          </select>
+          <div class="form-error" id="e-ward">Ward is required.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Assigned Doctor</label>
+          <select class="form-control" id="f-doctor">
+            <option value="">Select…</option>
+            <option>Dr. Anas Okonkwo</option><option>Dr. Balogun</option><option>Dr. Osei</option>
+            <option>Dr. Mensah</option><option>Dr. Adeyemi</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date of Admission</label>
+          <input type="date" class="form-control" id="f-admitDate" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Known Allergies</label>
+        <input type="text" class="form-control" id="f-allergies" placeholder="e.g. Penicillin, Peanuts (comma-separated)" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Existing Medical Conditions</label>
+        <textarea class="form-control" id="f-conditions" rows="3" placeholder="e.g. Hypertension, Type 2 Diabetes…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Chief Complaint / Reason for Visit</label>
+        <textarea class="form-control" id="f-complaint" rows="3" placeholder="Describe the main reason for admission…"></textarea>
+      </div>
+      <div class="nav-btns">
+        <button class="btn btn-secondary" id="back-2">← Back</button>
+        <button class="btn btn-primary" id="next-2">Next: Contact Info →</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Contact Info -->
+    <div class="panel step-content" id="step-3">
+      <div class="section-title">Contact & Next of Kin</div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Phone Number *</label>
+          <div class="input-icon-wrap">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.18 2 2 0 0 1 3.59 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.56a16 16 0 0 0 6.29 6.29l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            <input type="tel" class="form-control" id="f-phone" placeholder="+234 800 000 0000" maxlength="20" />
+          </div>
+          <div class="form-error" id="e-phone">Valid phone number is required.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <div class="input-icon-wrap">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <input type="email" class="form-control" id="f-email" placeholder="patient@email.com" maxlength="80" />
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Home Address</label>
+        <textarea class="form-control" id="f-address" rows="2" placeholder="Street, City, State…"></textarea>
+      </div>
+
+      <div class="section-title" style="margin-top:24px">Next of Kin</div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Full Name *</label>
+          <input type="text" class="form-control" id="f-nokName" placeholder="Next of kin full name" maxlength="80" />
+          <div class="form-error" id="e-nokName">Next of kin name is required.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Relationship *</label>
+          <select class="form-control" id="f-nokRel">
+            <option value="">Select…</option>
+            <option>Spouse</option><option>Parent</option><option>Sibling</option><option>Child</option><option>Guardian</option><option>Other</option>
+          </select>
+          <div class="form-error" id="e-nokRel">Relationship is required.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone Number *</label>
+          <input type="tel" class="form-control" id="f-nokPhone" placeholder="+234 800 000 0000" maxlength="20" />
+          <div class="form-error" id="e-nokPhone">Next of kin phone is required.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-control" id="f-nokEmail" placeholder="nextofkin@email.com" maxlength="80" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Additional Notes</label>
+        <textarea class="form-control" id="f-notes" rows="3" placeholder="Any additional notes about the patient…"></textarea>
+      </div>
+      <div class="nav-btns">
+        <button class="btn btn-secondary" id="back-3">← Back</button>
+        <button class="btn btn-primary" id="next-3">Review & Submit →</button>
+      </div>
+    </div>
+
+    <!-- STEP 4: Review -->
+    <div class="panel step-content" id="step-4">
+      <div class="section-title">Review Patient Information</div>
+      <p style="font-size:.83rem;color:var(--muted);margin-bottom:20px">Please review all information before submitting.</p>
+
+      <div class="preview-card">
+        <div style="font-size:.75rem;color:var(--teal);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;font-weight:600">Personal</div>
+        <div class="preview-row"><span class="preview-label">Full Name</span><span class="preview-val" id="rv-name">—</span></div>
+        <div class="preview-row"><span class="preview-label">Date of Birth</span><span class="preview-val" id="rv-dob">—</span></div>
+        <div class="preview-row"><span class="preview-label">Sex</span><span class="preview-val" id="rv-sex">—</span></div>
+        <div class="preview-row"><span class="preview-label">Marital Status</span><span class="preview-val" id="rv-marital">—</span></div>
+        <div class="preview-row"><span class="preview-label">Nationality</span><span class="preview-val" id="rv-nationality">—</span></div>
+      </div>
+
+      <div class="preview-card">
+        <div style="font-size:.75rem;color:var(--teal);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;font-weight:600">Medical</div>
+        <div class="preview-row"><span class="preview-label">Blood Group</span><span class="preview-val" id="rv-blood">—</span></div>
+        <div class="preview-row"><span class="preview-label">Status</span><span class="preview-val" id="rv-status">—</span></div>
+        <div class="preview-row"><span class="preview-label">Ward</span><span class="preview-val" id="rv-ward">—</span></div>
+        <div class="preview-row"><span class="preview-label">Doctor</span><span class="preview-val" id="rv-doctor">—</span></div>
+        <div class="preview-row"><span class="preview-label">Allergies</span><span class="preview-val" id="rv-allergies">None</span></div>
+        <div class="preview-row"><span class="preview-label">Complaint</span><span class="preview-val" id="rv-complaint">—</span></div>
+      </div>
+
+      <div class="preview-card">
+        <div style="font-size:.75rem;color:var(--teal);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;font-weight:600">Contact</div>
+        <div class="preview-row"><span class="preview-label">Phone</span><span class="preview-val" id="rv-phone">—</span></div>
+        <div class="preview-row"><span class="preview-label">Email</span><span class="preview-val" id="rv-email">—</span></div>
+        <div class="preview-row"><span class="preview-label">Next of Kin</span><span class="preview-val" id="rv-nok">—</span></div>
+        <div class="preview-row"><span class="preview-label">NOK Phone</span><span class="preview-val" id="rv-nokPhone">—</span></div>
+      </div>
+
+      <!-- Consent checkbox -->
+      <div style="display:flex;align-items:flex-start;gap:12px;padding:16px;background:rgba(0,180,162,.06);border:1px solid rgba(0,180,162,.2);border-radius:10px;margin-bottom:8px">
+        <input type="checkbox" id="consentCheck" style="width:17px;height:17px;margin-top:2px;accent-color:var(--teal);cursor:pointer;flex-shrink:0" />
+        <label for="consentCheck" style="font-size:.83rem;color:var(--muted2);cursor:pointer;line-height:1.5">
+          I confirm that the information provided is accurate and complete. I have obtained the patient's consent to store and process their personal and medical data in accordance with hospital policy and applicable data protection regulations.
+        </label>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn btn-secondary" id="back-4">← Back</button>
+        <button class="btn btn-primary" id="submitBtn" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <span id="submit-label">Register Patient</span>
+          <div style="display:none;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite" id="submit-spinner"></div>
+        </button>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script src="../js/auth.js"></script>
+<script src="../js/api.js"></script>
+<script src="../js/app.js"></script>
+<script>
+(function(){
+  App.init();
+
+  let currentStep = 1;
+  const TOTAL_STEPS = 4;
+
+  // Check edit mode
+  const params  = new URLSearchParams(window.location.search);
+  const editId  = params.get('edit');
+  if(editId){
+    document.getElementById('page-mode-title').textContent  = `Edit Patient ${editId}`;
+    document.getElementById('form-heading').textContent     = `Edit Patient — ${editId}`;
+    document.getElementById('form-subheading').textContent  = 'Update the patient\'s information below';
+    document.getElementById('submit-label').textContent     = 'Update Patient';
+    document.getElementById('edit-badge').style.display     = 'inline-block';
+  }
+
+  // Set today as default admission date
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('f-admitDate').value = today;
+
+  function goTo(step){
+    // Update step indicators
+    document.querySelectorAll('.step').forEach((el, i) => {
+      const n = i + 1;
+      el.classList.remove('active','done');
+      if(n < step)  el.classList.add('done');
+      if(n === step) el.classList.add('active');
+    });
+    // Show/hide content panels
+    document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active'));
+    document.getElementById(`step-${step}`).classList.add('active');
+    currentStep = step;
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  // ── Validation helpers ──
+  function req(id, errId){
+    const el = document.getElementById(id);
+    const ok = el.value.trim() !== '';
+    el.classList.toggle('error', !ok);
+    const e = document.getElementById(errId);
+    if(e) e.classList.toggle('show', !ok);
+    return ok;
+  }
+  function clearErrors(){
+    document.querySelectorAll('.form-control.error').forEach(el => el.classList.remove('error'));
+    document.querySelectorAll('.form-error.show').forEach(el => el.classList.remove('show'));
+  }
+
+  // ── Step navigation ──
+  document.getElementById('next-1').addEventListener('click', () => {
+    clearErrors();
+    const ok = req('f-firstName','e-firstName') & req('f-lastName','e-lastName') & req('f-dob','e-dob') & req('f-sex','e-sex');
+    if(ok) goTo(2);
+  });
+  document.getElementById('back-2').addEventListener('click', () => goTo(1));
+  document.getElementById('next-2').addEventListener('click', () => {
+    clearErrors();
+    const ok = req('f-blood','e-blood') & req('f-status','e-status') & req('f-ward','e-ward');
+    if(ok) goTo(3);
+  });
+  document.getElementById('back-3').addEventListener('click', () => goTo(2));
+  document.getElementById('next-3').addEventListener('click', () => {
+    clearErrors();
+    const phone = document.getElementById('f-phone').value.trim();
+    const phoneOk = /^\+?[0-9\s\-]{7,20}$/.test(phone);
+    document.getElementById('f-phone').classList.toggle('error', !phoneOk);
+    document.getElementById('e-phone').classList.toggle('show', !phoneOk);
+    const ok = phoneOk & req('f-nokName','e-nokName') & req('f-nokRel','e-nokRel') & req('f-nokPhone','e-nokPhone');
+    if(ok){ fillReview(); goTo(4); }
+  });
+  document.getElementById('back-4').addEventListener('click', () => goTo(3));
+
+  function val(id){ return document.getElementById(id).value || '—'; }
+
+  function fillReview(){
+    document.getElementById('rv-name').textContent       = `${val('f-firstName')} ${val('f-lastName')}`;
+    document.getElementById('rv-dob').textContent        = App.formatDate(document.getElementById('f-dob').value) || '—';
+    document.getElementById('rv-sex').textContent        = val('f-sex');
+    document.getElementById('rv-marital').textContent    = val('f-marital');
+    document.getElementById('rv-nationality').textContent= val('f-nationality');
+    document.getElementById('rv-blood').textContent      = val('f-blood');
+    document.getElementById('rv-status').textContent     = val('f-status');
+    document.getElementById('rv-ward').textContent       = val('f-ward');
+    document.getElementById('rv-doctor').textContent     = val('f-doctor');
+    document.getElementById('rv-allergies').textContent  = document.getElementById('f-allergies').value || 'None stated';
+    document.getElementById('rv-complaint').textContent  = document.getElementById('f-complaint').value || '—';
+    document.getElementById('rv-phone').textContent      = val('f-phone');
+    document.getElementById('rv-email').textContent      = document.getElementById('f-email').value || '—';
+    document.getElementById('rv-nok').textContent        = `${val('f-nokName')} (${val('f-nokRel')})`;
+    document.getElementById('rv-nokPhone').textContent   = val('f-nokPhone');
+  }
+
+  // Consent toggles submit btn
+  document.getElementById('consentCheck').addEventListener('change', function(){
+    document.getElementById('submitBtn').disabled = !this.checked;
+  });
+
+  // Step indicators clickable (only go back)
+  document.querySelectorAll('.step').forEach(el => {
+    el.addEventListener('click', () => {
+      const target = parseInt(el.dataset.step);
+      if(target < currentStep) goTo(target);
+    });
+  });
+
+  // ── Submit ──
+  document.getElementById('submitBtn').addEventListener('click', async () => {
+    const btn     = document.getElementById('submitBtn');
+    const label   = document.getElementById('submit-label');
+    const spinner = document.getElementById('submit-spinner');
+
+    btn.disabled   = true;
+    label.style.display   = 'none';
+    spinner.style.display = 'block';
+
+    try {
+      // Replace with: await API.addPatient(formData);
+      await new Promise(r => setTimeout(r, 1400));
+
+      App.toast(editId ? 'Patient updated successfully!' : 'Patient registered successfully!', 'success');
+
+      setTimeout(() => {
+        window.location.href = 'patients.html';
+      }, 1000);
+    } catch(err){
+      App.toast('Something went wrong. Please try again.', 'error');
+      btn.disabled = false;
+      label.style.display   = 'inline';
+      spinner.style.display = 'none';
+    }
+  });
+
+})();
+</script>
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</body>
+</html>

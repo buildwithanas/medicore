@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MediCore HMS — Appointments</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--navy:#0a1628;--navy2:#0d1e3a;--navy3:#112240;--teal:#00b4a2;--teal2:#00d4bf;--teal-dim:rgba(0,180,162,.14);--amber:#f59e0b;--amber-dim:rgba(245,158,11,.14);--rose:#f43f5e;--rose-dim:rgba(244,63,94,.14);--blue:#3b82f6;--blue-dim:rgba(59,130,246,.14);--violet:#8b5cf6;--violet-dim:rgba(139,92,246,.14);--green:#22c55e;--green-dim:rgba(34,197,94,.14);--border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.12);--muted:#5d7a8f;--muted2:#8ba3b5;--white:#fff;--text:#d4e5f0;--sidebar-w:260px;--topbar-h:64px;--radius:14px}
+    html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);overflow:hidden}
+    ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:99px}
+    .sidebar{position:fixed;left:0;top:0;bottom:0;width:var(--sidebar-w);background:var(--navy2);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:50;transition:transform .3s;overflow-y:auto}
+    .sidebar-brand{display:flex;align-items:center;gap:12px;padding:20px 22px 18px;border-bottom:1px solid var(--border);flex-shrink:0}
+    .brand-icon{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--teal),#0097a7);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,180,162,.3);flex-shrink:0}
+    .bname{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--white)}.bsub{font-size:.63rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
+    .sidebar-section{padding:18px 14px 6px;font-size:.62rem;color:var(--muted);letter-spacing:.12em;text-transform:uppercase}
+    .nav-item{display:flex;align-items:center;gap:11px;padding:10px 14px;margin:2px 8px;border-radius:10px;cursor:pointer;font-size:.87rem;color:var(--muted2);transition:all .18s;border:none;background:none;width:calc(100% - 16px);text-align:left;font-family:inherit;text-decoration:none}
+    .nav-item svg{width:17px;height:17px;flex-shrink:0}
+    .nav-item:hover{background:rgba(255,255,255,.05);color:var(--white)}.nav-item.active{background:var(--teal-dim);color:var(--teal2);font-weight:500}
+    .nav-badge{margin-left:auto;background:var(--rose);color:#fff;font-size:.65rem;font-weight:600;padding:1px 7px;border-radius:99px}
+    .sidebar-footer{margin-top:auto;padding:16px 14px;border-top:1px solid var(--border);flex-shrink:0}
+    .user-card{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.04);cursor:pointer;transition:background .2s}.user-card:hover{background:rgba(255,255,255,.08)}
+    .avatar-user{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--teal),#0060ff);display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:600;color:#fff;flex-shrink:0}
+    .topbar{position:fixed;top:0;left:var(--sidebar-w);right:0;height:var(--topbar-h);background:rgba(10,22,40,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;padding:0 28px;z-index:40}
+    .topbar-title{font-family:'Playfair Display',serif;font-size:1.25rem;color:var(--white)}
+    .search-bar{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:10px;padding:8px 14px;margin-left:auto;width:260px;transition:border-color .2s}
+    .search-bar:focus-within{border-color:var(--teal)}.search-bar input{background:none;border:none;outline:none;color:var(--white);font-size:.85rem;font-family:inherit;width:100%}.search-bar input::placeholder{color:var(--muted)}
+    .icon-btn{width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .18s;color:var(--muted2);position:relative}
+    .icon-btn:hover{background:rgba(255,255,255,.1);color:var(--white)}.dot{position:absolute;top:7px;right:8px;width:7px;height:7px;border-radius:50%;background:var(--rose);border:2px solid var(--navy2)}
+    .date-chip{font-size:.76rem;color:var(--muted2);background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:6px 12px;white-space:nowrap}
+    .main{position:fixed;top:var(--topbar-h);left:var(--sidebar-w);right:0;bottom:0;overflow-y:auto;padding:28px;background:radial-gradient(ellipse 60% 40% at 80% 0%,rgba(0,180,162,.06) 0%,transparent 60%),var(--navy)}
+    .panel{background:var(--navy3);border:1px solid var(--border);border-radius:var(--radius);padding:24px;animation:fadeUp .4s both}
+    .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+    .panel-title{font-size:.97rem;font-weight:600;color:var(--white)}.panel-sub{font-size:.74rem;color:var(--muted);margin-top:2px}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.87rem;font-weight:500;cursor:pointer;border:none;transition:all .2s;text-decoration:none}
+    .btn-primary{background:linear-gradient(135deg,var(--teal),#0097a7);color:#fff;box-shadow:0 4px 16px rgba(0,180,162,.3)}.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,180,162,.4)}
+    .btn-secondary{background:rgba(255,255,255,.06);color:var(--muted2);border:1px solid var(--border)}.btn-secondary:hover{background:rgba(255,255,255,.1);color:var(--white)}
+    .btn-sm{padding:7px 14px;font-size:.78rem}.btn-danger{background:var(--rose-dim);color:#fb7185;border:1px solid rgba(244,63,94,.2)}.btn-danger:hover{background:rgba(244,63,94,.25)}
+    .badge{display:inline-block;font-size:.68rem;font-weight:600;padding:3px 10px;border-radius:99px}
+    .badge-teal{background:var(--teal-dim);color:var(--teal2)}.badge-amber{background:var(--amber-dim);color:var(--amber)}.badge-rose{background:var(--rose-dim);color:#fb7185}.badge-blue{background:var(--blue-dim);color:#93c5fd}.badge-green{background:var(--green-dim);color:#86efac}
+    table{width:100%;border-collapse:collapse}
+    th{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:500;padding:0 14px 12px;text-align:left;white-space:nowrap}
+    td{padding:12px 14px;font-size:.84rem;border-top:1px solid var(--border)}
+    tr:hover td{background:rgba(255,255,255,.02)}
+    .form-group{margin-bottom:18px}.form-label{display:block;font-size:.76rem;color:var(--muted2);margin-bottom:7px;text-transform:uppercase;letter-spacing:.05em}
+    .form-control{width:100%;height:46px;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:10px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:.88rem;padding:0 14px;outline:none;transition:border-color .2s,box-shadow .2s}
+    .form-control:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(0,180,162,.1)}.form-control::placeholder{color:var(--muted)}
+    textarea.form-control{height:auto;padding:12px 14px;resize:vertical}select.form-control{cursor:pointer}select.form-control option{background:var(--navy2)}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);z-index:100;align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto}
+    .modal-overlay.open{display:flex}.modal{background:var(--navy2);border:1px solid var(--border2);border-radius:20px;width:100%;max-width:600px;padding:32px;animation:fadeUp .3s both;margin:auto}
+    .modal-title{font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--white);margin-bottom:4px}.modal-sub{font-size:.8rem;color:var(--muted);margin-bottom:24px}
+    .modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:24px;padding-top:20px;border-top:1px solid var(--border)}
+    /* CALENDAR */
+    .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:8px}
+    .cal-day-hdr{font-size:.7rem;color:var(--muted);text-align:center;padding:6px 0;font-weight:500}
+    .cal-day{min-height:64px;border-radius:10px;background:rgba(255,255,255,.02);border:1px solid var(--border);padding:8px;cursor:pointer;transition:all .18s;position:relative}
+    .cal-day:hover{background:rgba(0,180,162,.07);border-color:rgba(0,180,162,.25)}
+    .cal-day.today{border-color:var(--teal);background:var(--teal-dim)}
+    .cal-day.selected{border-color:var(--teal2);background:rgba(0,212,191,.15)}
+    .cal-day.other-month{opacity:.3}
+    .cal-day-num{font-size:.78rem;color:var(--muted2);font-weight:500}
+    .cal-day.today .cal-day-num{color:var(--teal2);font-weight:700}
+    .cal-dot{width:6px;height:6px;border-radius:50%;margin-top:4px}
+    .cal-appt-pill{font-size:.6rem;background:var(--teal-dim);color:var(--teal2);border-radius:4px;padding:1px 5px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+    /* Filter chips */
+    .filter-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+    .chip{padding:6px 14px;border-radius:99px;font-size:.78rem;cursor:pointer;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--muted2);transition:all .18s;font-family:'DM Sans',sans-serif}
+    .chip:hover{color:var(--white);border-color:rgba(255,255,255,.2)}.chip.active{background:var(--teal-dim);border-color:rgba(0,180,162,.4);color:var(--teal2)}
+    /* View toggle */
+    .view-toggle{display:flex;gap:4px;background:rgba(0,0,0,.25);border-radius:10px;padding:4px}
+    .vbtn{padding:7px 14px;border-radius:7px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:.8rem;color:var(--muted2);cursor:pointer;transition:all .18s;display:flex;align-items:center;gap:6px}
+    .vbtn.active{background:var(--teal-dim);color:var(--teal2)}.vbtn:hover:not(.active){color:var(--white)}
+    .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:49;backdrop-filter:blur(2px)}.sidebar-overlay.open{display:block}
+    .hamburger{display:none;background:none;border:none;cursor:pointer;color:var(--muted2);padding:4px}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+    @media(max-width:768px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.topbar{left:0;padding:0 16px}.main{left:0;padding:16px}.hamburger{display:flex}.grid-2,.grid-3{grid-template-columns:1fr}.search-bar{width:160px}.date-chip{display:none}}
+  </style>
+</head>
+<body>
+<div class="sidebar-overlay" id="overlay"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" width="20" height="20"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+    <div><div class="bname">MediCore</div><div class="bsub">HMS v2.4</div></div>
+  </div>
+  <div class="sidebar-section">Main</div>
+  <a class="nav-item" href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</a>
+  <a class="nav-item" href="patients.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Patients<span class="nav-badge">248</span></a>
+  <a class="nav-item active" href="appointments.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Appointments<span class="nav-badge" style="background:var(--amber)">12</span></a>
+  <a class="nav-item" href="records.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>Medical Records</a>
+  <a class="nav-item" href="doctors.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Doctors</a>
+  <div class="sidebar-section">System</div>
+  <a class="nav-item" href="settings.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+  <div class="sidebar-footer">
+    <div class="user-card" id="logoutBtn" title="Logout">
+      <div class="avatar-user" id="user-initials">—</div>
+      <div><div style="font-size:.86rem;font-weight:500;color:var(--white)" id="user-name">Loading…</div><div style="font-size:.71rem;color:var(--teal)" id="user-role">—</div></div>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-left:auto"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    </div>
+  </div>
+</aside>
+
+<header class="topbar">
+  <button class="hamburger" id="hamburger"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+  <div class="topbar-title">Appointments</div>
+  <div class="search-bar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" id="searchInput" placeholder="Search appointments…" autocomplete="off"/>
+  </div>
+  <div style="display:flex;align-items:center;gap:6px;margin-left:10px">
+    <div class="date-chip" id="datechip"></div>
+    <div class="icon-btn"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="dot"></span></div>
+  </div>
+</header>
+
+<main class="main">
+  <!-- Header row -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;animation:fadeUp .4s both">
+    <div>
+      <h2 style="font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--white);margin-bottom:4px">Appointments</h2>
+      <p style="font-size:.82rem;color:var(--muted)" id="appt-header-sub">Loading…</p>
+    </div>
+    <button class="btn btn-primary" id="newApptBtn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Book Appointment
+    </button>
+  </div>
+
+  <!-- Stat chips -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;animation:fadeUp .4s .05s both">
+    <div class="panel" style="padding:16px 18px;display:flex;gap:12px;align-items:center">
+      <div style="width:38px;height:38px;border-radius:10px;background:var(--teal-dim);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+      <div><div style="font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--white)" id="s-total">0</div><div style="font-size:.72rem;color:var(--muted2)">Total Today</div></div>
+    </div>
+    <div class="panel" style="padding:16px 18px;display:flex;gap:12px;align-items:center">
+      <div style="width:38px;height:38px;border-radius:10px;background:var(--green-dim);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <div><div style="font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--white)" id="s-confirmed">0</div><div style="font-size:.72rem;color:var(--muted2)">Confirmed</div></div>
+    </div>
+    <div class="panel" style="padding:16px 18px;display:flex;gap:12px;align-items:center">
+      <div style="width:38px;height:38px;border-radius:10px;background:var(--amber-dim);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+      <div><div style="font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--white)" id="s-pending">0</div><div style="font-size:.72rem;color:var(--muted2)">Pending</div></div>
+    </div>
+    <div class="panel" style="padding:16px 18px;display:flex;gap:12px;align-items:center">
+      <div style="width:38px;height:38px;border-radius:10px;background:var(--rose-dim);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--rose)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>
+      <div><div style="font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--white)" id="s-cancelled">0</div><div style="font-size:.72rem;color:var(--muted2)">Cancelled</div></div>
+    </div>
+  </div>
+
+  <!-- Views + Filters -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px;animation:fadeUp .4s .1s both">
+    <div class="filter-chips" id="filterChips">
+      <button class="chip active" data-f="all">All</button>
+      <button class="chip" data-f="confirmed">Confirmed</button>
+      <button class="chip" data-f="pending">Pending</button>
+      <button class="chip" data-f="inprogress">In Progress</button>
+      <button class="chip" data-f="completed">Completed</button>
+      <button class="chip" data-f="cancelled">Cancelled</button>
+    </div>
+    <div class="view-toggle">
+      <button class="vbtn active" id="listViewBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>List</button>
+      <button class="vbtn" id="calViewBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Calendar</button>
+    </div>
+  </div>
+
+  <!-- LIST VIEW -->
+  <div id="listView" style="animation:fadeUp .4s .15s both">
+    <div class="panel">
+      <div class="panel-head">
+        <div><div class="panel-title">Appointment List</div><div class="panel-sub" id="list-sub">—</div></div>
+        <div style="display:flex;gap:8px">
+          <select class="btn btn-secondary btn-sm" id="sortAppt" style="cursor:pointer">
+            <option value="time">Sort: Time</option>
+            <option value="patient">Sort: Patient</option>
+            <option value="doctor">Sort: Doctor</option>
+          </select>
+          <button class="btn btn-secondary btn-sm" id="exportApptBtn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export
+          </button>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Patient</th><th>Time</th><th>Doctor</th><th>Department</th><th>Type</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="appt-tbody"></tbody>
+      </table>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+        <div style="font-size:.78rem;color:var(--muted)" id="pag-info">Page 1 of 1</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-secondary btn-sm" id="prevBtn">← Prev</button>
+          <button class="btn btn-secondary btn-sm" id="nextBtn">Next →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CALENDAR VIEW -->
+  <div id="calView" style="display:none;animation:fadeUp .3s both">
+    <div class="panel">
+      <div class="panel-head">
+        <button class="btn btn-secondary btn-sm" id="calPrev">← Prev</button>
+        <div style="text-align:center"><div class="panel-title" id="cal-month-label">—</div><div class="panel-sub" id="cal-sub">Click a day to see appointments</div></div>
+        <button class="btn btn-secondary btn-sm" id="calNext">Next →</button>
+      </div>
+      <div class="cal-grid" id="cal-headers"></div>
+      <div class="cal-grid" id="cal-days"></div>
+    </div>
+    <!-- Selected day panel -->
+    <div class="panel" id="dayPanel" style="margin-top:16px;display:none">
+      <div class="panel-head">
+        <div><div class="panel-title" id="day-panel-title">—</div><div class="panel-sub" id="day-panel-sub">—</div></div>
+        <button class="btn btn-primary btn-sm" id="dayAddBtn">+ Book</button>
+      </div>
+      <div id="day-appt-list"></div>
+    </div>
+  </div>
+</main>
+
+<!-- BOOK APPOINTMENT MODAL -->
+<div class="modal-overlay" id="bookModal">
+  <div class="modal">
+    <div class="modal-title">Book Appointment</div>
+    <div class="modal-sub">Schedule a new patient appointment</div>
+    <div class="grid-2">
+      <div class="form-group"><label class="form-label">Patient Name *</label><input type="text" class="form-control" id="b-patient" placeholder="Full name"/></div>
+      <div class="form-group"><label class="form-label">Patient ID *</label><input type="text" class="form-control" id="b-pid" placeholder="e.g. P-1001"/></div>
+      <div class="form-group"><label class="form-label">Date *</label><input type="date" class="form-control" id="b-date"/></div>
+      <div class="form-group"><label class="form-label">Time *</label><input type="time" class="form-control" id="b-time"/></div>
+      <div class="form-group"><label class="form-label">Doctor *</label>
+        <select class="form-control" id="b-doctor"><option value="">Select…</option><option>Dr. Anas Okonkwo</option><option>Dr. Balogun</option><option>Dr. Osei</option><option>Dr. Mensah</option><option>Dr. Adeyemi</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Department *</label>
+        <select class="form-control" id="b-dept"><option value="">Select…</option><option>Cardiology</option><option>Neurology</option><option>Oncology</option><option>Orthopaedics</option><option>General</option><option>Paediatrics</option><option>Maternity</option><option>Emergency</option></select>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Appointment Type</label>
+      <select class="form-control" id="b-type"><option>Consultation</option><option>Follow-up</option><option>Procedure</option><option>Lab Test</option><option>Emergency</option></select>
+    </div>
+    <div class="form-group"><label class="form-label">Notes</label><textarea class="form-control" id="b-notes" rows="2" placeholder="Optional notes…"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="closeBook">Cancel</button>
+      <button class="btn btn-primary" id="saveAppt">Book Appointment</button>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW APPOINTMENT MODAL -->
+<div class="modal-overlay" id="viewModal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title" id="va-title">—</div>
+    <div class="modal-sub" id="va-sub">—</div>
+    <div id="va-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" id="va-cancel-appt">Cancel Appointment</button>
+      <button class="btn btn-secondary" id="closeView">Close</button>
+      <button class="btn btn-primary" id="va-confirm-appt">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" style="position:fixed;bottom:28px;right:28px;z-index:9999;display:none"></div>
+
+<script src="../js/auth.js"></script>
+<script>
+(function(){
+'use strict';
+
+/* ── Auth ── */
+if(typeof Auth!=='undefined'){
+  Auth.requireAuth();
+  const u=Auth.getSession();
+  if(u){
+    document.getElementById('user-name').textContent=u.name||'Staff';
+    document.getElementById('user-role').textContent=u.role||'Staff';
+    document.getElementById('user-initials').textContent=(u.name||'U').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+  }
+  document.getElementById('logoutBtn').addEventListener('click',()=>Auth.logout());
+}
+
+/* ── Sidebar ── */
+document.getElementById('hamburger').addEventListener('click',()=>{document.getElementById('sidebar').classList.toggle('open');document.getElementById('overlay').classList.toggle('open');});
+document.getElementById('overlay').addEventListener('click',()=>{document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('open');});
+
+/* ── Date ── */
+const now=new Date();
+document.getElementById('datechip').textContent=now.toLocaleDateString('en-GB',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+document.getElementById('appt-header-sub').textContent=now.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+/* ── Toast ── */
+function toast(msg,type='success'){
+  const t=document.getElementById('toast');
+  const col=type==='success'?'var(--teal)':type==='error'?'var(--rose)':'var(--amber)';
+  const bg=type==='success'?'#0d2e2a':type==='error'?'#2e0d13':'#2e2000';
+  t.style.cssText=`position:fixed;bottom:28px;right:28px;z-index:9999;display:flex;padding:14px 20px;border-radius:12px;font-size:.86rem;font-family:'DM Sans',sans-serif;align-items:center;gap:10px;font-weight:500;box-shadow:0 8px 32px rgba(0,0,0,.4);background:${bg};border:1px solid ${col};color:${col}`;
+  t.innerHTML=(type==='success'?'✓':type==='error'?'✕':'⚠')+' '+msg;
+  setTimeout(()=>t.style.display='none',3200);
+}
+
+/* ── DATA ── */
+const TODAY=now.toISOString().split('T')[0];
+let APPTS=[
+  {id:'A001',patient:'Fatima Al-Hassan',pid:'P-1001',date:TODAY,time:'08:00',doctor:'Dr. Osei',dept:'Cardiology',type:'Consultation',status:'confirmed',notes:'Regular cardiac check'},
+  {id:'A002',patient:'Chidi Nwachukwu',pid:'P-1002',date:TODAY,time:'09:15',doctor:'Dr. Balogun',dept:'Neurology',type:'Follow-up',status:'inprogress',notes:'Post-stroke review'},
+  {id:'A003',patient:'Amara Diallo',pid:'P-1003',date:TODAY,time:'10:30',doctor:'Dr. Anas Okonkwo',dept:'Oncology',type:'Procedure',status:'confirmed',notes:'Chemo session 3'},
+  {id:'A004',patient:'Samuel Taiwo',pid:'P-1004',date:TODAY,time:'11:00',doctor:'Dr. Mensah',dept:'Orthopaedics',type:'Consultation',status:'pending',notes:'Knee pain evaluation'},
+  {id:'A005',patient:'Grace Adeyemi',pid:'P-1005',date:TODAY,time:'11:45',doctor:'Dr. Anas Okonkwo',dept:'General',type:'Follow-up',status:'confirmed',notes:'Diabetes management'},
+  {id:'A006',patient:'Kwame Asante',pid:'P-1006',date:TODAY,time:'13:00',doctor:'Dr. Osei',dept:'Cardiology',type:'Emergency',status:'cancelled',notes:'Patient rescheduled'},
+  {id:'A007',patient:'Ngozi Okafor',pid:'P-1007',date:TODAY,time:'14:00',doctor:'Dr. Balogun',dept:'Maternity',type:'Consultation',status:'confirmed',notes:'Antenatal visit'},
+  {id:'A008',patient:'Tunde Fashola',pid:'P-1008',date:TODAY,time:'14:45',doctor:'Dr. Mensah',dept:'Orthopaedics',type:'Follow-up',status:'pending',notes:'Post-MRI review'},
+  {id:'A009',patient:'Akosua Mensah',pid:'P-1009',date:TODAY,time:'15:30',doctor:'Dr. Anas Okonkwo',dept:'Paediatrics',type:'Consultation',status:'completed',notes:'Fever assessment'},
+  {id:'A010',patient:'Musa Garba',pid:'P-1010',date:TODAY,time:'16:00',doctor:'Dr. Balogun',dept:'Neurology',type:'Follow-up',status:'confirmed',notes:'Neuro assessment'},
+];
+
+const SBADGE={confirmed:'badge-teal',pending:'badge-amber',inprogress:'badge-blue',completed:'badge-green',cancelled:'badge-rose'};
+const COLORS=['#00b4a2','#3b82f6','#8b5cf6','#f59e0b','#f43f5e','#10b981','#ec4899','#14b8a6','#6366f1','#f97316'];
+let filtered=[...APPTS];
+let page=1;
+const PAGE=7;
+let viewId=null;
+
+/* ── Stats ── */
+function updateStats(){
+  const all=APPTS.filter(a=>a.date===TODAY);
+  document.getElementById('s-total').textContent=all.length;
+  document.getElementById('s-confirmed').textContent=all.filter(a=>a.status==='confirmed').length;
+  document.getElementById('s-pending').textContent=all.filter(a=>a.status==='pending').length;
+  document.getElementById('s-cancelled').textContent=all.filter(a=>a.status==='cancelled').length;
+}
+
+/* ── List render ── */
+function renderList(){
+  const tbody=document.getElementById('appt-tbody');
+  const total=Math.ceil(filtered.length/PAGE)||1;
+  document.getElementById('pag-info').textContent=`Page ${page} of ${total}`;
+  document.getElementById('prevBtn').disabled=page<=1;
+  document.getElementById('nextBtn').disabled=page>=total;
+  document.getElementById('list-sub').textContent=`${filtered.length} appointment${filtered.length!==1?'s':''}`;
+  tbody.innerHTML='';
+  const slice=filtered.slice((page-1)*PAGE, page*PAGE);
+  if(!slice.length){tbody.innerHTML=`<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted)">No appointments found.</td></tr>`;return;}
+  slice.forEach((a,i)=>{
+    const ini=a.patient.split(' ').map(n=>n[0]).join('').slice(0,2);
+    const color=COLORS[i%COLORS.length];
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><div style="display:flex;align-items:center;gap:9px">
+        <div style="width:30px;height:30px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:600;color:#fff">${ini}</div>
+        <div><div style="color:var(--white);font-weight:500;font-size:.84rem">${a.patient}</div><div style="font-size:.7rem;color:var(--muted)">${a.pid}</div></div>
+      </div></td>
+      <td style="color:var(--muted2)">${a.time}</td>
+      <td style="color:var(--white)">${a.doctor}</td>
+      <td style="color:var(--muted2)">${a.dept}</td>
+      <td><span style="font-size:.72rem;background:rgba(255,255,255,.07);padding:2px 8px;border-radius:6px;color:var(--muted2)">${a.type}</span></td>
+      <td><span class="badge ${SBADGE[a.status]||'badge-teal'}">${a.status.charAt(0).toUpperCase()+a.status.slice(1)}</span></td>
+      <td><div style="display:flex;gap:6px">
+        <button class="btn btn-secondary btn-sm view-btn" data-id="${a.id}" title="View">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+        <button class="btn btn-secondary btn-sm edit-btn" data-id="${a.id}" title="Mark Complete" style="color:var(--teal)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        </button>
+        <button class="btn btn-danger btn-sm del-btn" data-id="${a.id}" title="Cancel">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div></td>`;
+    tbody.appendChild(tr);
+  });
+  tbody.querySelectorAll('.view-btn').forEach(btn=>btn.addEventListener('click',()=>openViewModal(btn.dataset.id)));
+  tbody.querySelectorAll('.edit-btn').forEach(btn=>btn.addEventListener('click',()=>{
+    const a=APPTS.find(x=>x.id===btn.dataset.id);
+    if(a&&a.status!=='completed'){a.status='completed';applyFilters();updateStats();toast('Marked as completed.');}
+  }));
+  tbody.querySelectorAll('.del-btn').forEach(btn=>btn.addEventListener('click',()=>{
+    const a=APPTS.find(x=>x.id===btn.dataset.id);
+    if(a){a.status='cancelled';applyFilters();updateStats();toast('Appointment cancelled.','error');}
+  }));
+}
+
+/* ── Filter + sort ── */
+let activeFilter='all';
+function applyFilters(){
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  const sort=document.getElementById('sortAppt').value;
+  filtered=APPTS
+    .filter(a=>activeFilter==='all'||a.status===activeFilter)
+    .filter(a=>!q||a.patient.toLowerCase().includes(q)||a.doctor.toLowerCase().includes(q)||a.dept.toLowerCase().includes(q)||a.type.toLowerCase().includes(q))
+    .sort((a,b)=>{
+      if(sort==='patient')return a.patient.localeCompare(b.patient);
+      if(sort==='doctor')return a.doctor.localeCompare(b.doctor);
+      return a.time.localeCompare(b.time);
+    });
+  page=1;
+  renderList();
+}
+
+document.getElementById('filterChips').addEventListener('click',e=>{
+  const chip=e.target.closest('.chip');
+  if(!chip)return;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  chip.classList.add('active');
+  activeFilter=chip.dataset.f;
+  applyFilters();
+});
+document.getElementById('searchInput').addEventListener('input',applyFilters);
+document.getElementById('sortAppt').addEventListener('change',applyFilters);
+document.getElementById('prevBtn').addEventListener('click',()=>{if(page>1){page--;renderList();}});
+document.getElementById('nextBtn').addEventListener('click',()=>{if(page<Math.ceil(filtered.length/PAGE)){page++;renderList();}});
+
+/* ── View modal ── */
+function openViewModal(id){
+  const a=APPTS.find(x=>x.id===id);
+  if(!a)return;
+  viewId=id;
+  document.getElementById('va-title').textContent=a.patient;
+  document.getElementById('va-sub').textContent=a.pid+' · '+a.dept+' · '+a.date+' at '+a.time;
+  document.getElementById('va-body').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      ${[['Doctor',a.doctor],['Department',a.dept],['Type',a.type],['Time',a.time]].map(([l,v])=>`<div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:12px"><div style="font-size:.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">${l}</div><div style="color:var(--white);font-size:.88rem">${v}</div></div>`).join('')}
+    </div>
+    <div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px">
+      <div style="font-size:.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Status</div>
+      <span class="badge ${SBADGE[a.status]||'badge-teal'}">${a.status.charAt(0).toUpperCase()+a.status.slice(1)}</span>
+    </div>
+    ${a.notes?`<div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:14px"><div style="font-size:.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Notes</div><div style="font-size:.86rem;color:var(--text)">${a.notes}</div></div>`:''}`;
+  document.getElementById('viewModal').classList.add('open');
+}
+document.getElementById('closeView').addEventListener('click',()=>document.getElementById('viewModal').classList.remove('open'));
+document.getElementById('viewModal').addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
+document.getElementById('va-confirm-appt').addEventListener('click',()=>{
+  const a=APPTS.find(x=>x.id===viewId);
+  if(a){a.status='confirmed';applyFilters();updateStats();document.getElementById('viewModal').classList.remove('open');toast('Appointment confirmed.');}
+});
+document.getElementById('va-cancel-appt').addEventListener('click',()=>{
+  const a=APPTS.find(x=>x.id===viewId);
+  if(a){a.status='cancelled';applyFilters();updateStats();document.getElementById('viewModal').classList.remove('open');toast('Appointment cancelled.','error');}
+});
+
+/* ── Book modal ── */
+document.getElementById('newApptBtn').addEventListener('click',()=>{
+  document.getElementById('b-date').value=TODAY;
+  document.getElementById('bookModal').classList.add('open');
+});
+document.getElementById('dayAddBtn')?.addEventListener('click',()=>document.getElementById('bookModal').classList.add('open'));
+document.getElementById('closeBook').addEventListener('click',()=>document.getElementById('bookModal').classList.remove('open'));
+document.getElementById('bookModal').addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
+document.getElementById('saveAppt').addEventListener('click',()=>{
+  const patient=document.getElementById('b-patient').value.trim();
+  const pid=document.getElementById('b-pid').value.trim();
+  const date=document.getElementById('b-date').value;
+  const time=document.getElementById('b-time').value;
+  const doctor=document.getElementById('b-doctor').value;
+  const dept=document.getElementById('b-dept').value;
+  if(!patient||!pid||!date||!time||!doctor||!dept){toast('Please fill all required fields.','error');return;}
+  const newA={id:'A'+String(APPTS.length+1).padStart(3,'0'),patient,pid,date,time,doctor,dept,type:document.getElementById('b-type').value,status:'pending',notes:document.getElementById('b-notes').value};
+  APPTS.unshift(newA);
+  applyFilters();updateStats();buildCalendar();
+  document.getElementById('bookModal').classList.remove('open');
+  ['b-patient','b-pid','b-time','b-notes'].forEach(id=>document.getElementById(id).value='');
+  toast('Appointment booked!');
+});
+
+/* ── Export ── */
+document.getElementById('exportApptBtn').addEventListener('click',()=>{
+  const rows=[['ID','Patient','PID','Date','Time','Doctor','Dept','Type','Status']];
+  APPTS.forEach(a=>rows.push([a.id,a.patient,a.pid,a.date,a.time,a.doctor,a.dept,a.type,a.status]));
+  const csv=rows.map(r=>r.join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='appointments.csv';a.click();
+  toast('Exported as CSV.');
+});
+
+/* ── Calendar ── */
+let calDate=new Date(now.getFullYear(),now.getMonth(),1);
+function buildCalendar(){
+  const hdr=document.getElementById('cal-headers');
+  const days=document.getElementById('cal-days');
+  const mo=calDate.getMonth(),yr=calDate.getFullYear();
+  document.getElementById('cal-month-label').textContent=calDate.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+  hdr.innerHTML=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div class="cal-day-hdr">${d}</div>`).join('');
+  const first=new Date(yr,mo,1).getDay();
+  const daysInMo=new Date(yr,mo+1,0).getDate();
+  const prevDays=new Date(yr,mo,0).getDate();
+  days.innerHTML='';
+  let html='';
+  for(let i=0;i<first;i++){const d=prevDays-first+1+i;html+=`<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`;}
+  for(let d=1;d<=daysInMo;d++){
+    const dateStr=`${yr}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday=dateStr===TODAY;
+    const dayAppts=APPTS.filter(a=>a.date===dateStr);
+    let pills=dayAppts.slice(0,2).map(a=>`<div class="cal-appt-pill">${a.time} ${a.patient.split(' ')[0]}</div>`).join('');
+    if(dayAppts.length>2)pills+=`<div style="font-size:.58rem;color:var(--muted);margin-top:2px">+${dayAppts.length-2} more</div>`;
+    html+=`<div class="cal-day${isToday?' today':''}" data-date="${dateStr}"><div class="cal-day-num">${d}</div>${pills}</div>`;
+  }
+  const rem=42-(first+daysInMo);
+  for(let d=1;d<=rem;d++)html+=`<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`;
+  days.innerHTML=html;
+  days.querySelectorAll('.cal-day:not(.other-month)').forEach(cell=>{
+    cell.addEventListener('click',()=>{
+      days.querySelectorAll('.cal-day').forEach(c=>c.classList.remove('selected'));
+      cell.classList.add('selected');
+      showDayPanel(cell.dataset.date);
+    });
+  });
+}
+function showDayPanel(dateStr){
+  const panel=document.getElementById('dayPanel');
+  const dayAppts=APPTS.filter(a=>a.date===dateStr);
+  const label=new Date(dateStr+'T12:00:00').toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('day-panel-title').textContent=label;
+  document.getElementById('day-panel-sub').textContent=`${dayAppts.length} appointment${dayAppts.length!==1?'s':''}`;
+  const list=document.getElementById('day-appt-list');
+  if(!dayAppts.length){list.innerHTML=`<div style="text-align:center;padding:32px;color:var(--muted);font-size:.86rem">No appointments on this day.</div>`;panel.style.display='block';return;}
+  list.innerHTML=dayAppts.map(a=>`
+    <div style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:10px;background:rgba(255,255,255,.025);border:1px solid var(--border);margin-bottom:8px;cursor:pointer" onclick="document.querySelector('[data-id=&quot;${a.id}&quot;]')?.click()||void(0)">
+      <div style="font-size:.75rem;color:var(--teal);background:var(--teal-dim);padding:4px 10px;border-radius:7px;font-weight:600;flex-shrink:0">${a.time}</div>
+      <div style="flex:1"><div style="font-size:.86rem;color:var(--white);font-weight:500">${a.patient}</div><div style="font-size:.73rem;color:var(--muted)">${a.doctor} · ${a.dept}</div></div>
+      <span class="badge ${SBADGE[a.status]||'badge-teal'}">${a.status.charAt(0).toUpperCase()+a.status.slice(1)}</span>
+    </div>`).join('');
+  panel.style.display='block';
+}
+document.getElementById('calPrev').addEventListener('click',()=>{calDate=new Date(calDate.getFullYear(),calDate.getMonth()-1,1);buildCalendar();document.getElementById('dayPanel').style.display='none';});
+document.getElementById('calNext').addEventListener('click',()=>{calDate=new Date(calDate.getFullYear(),calDate.getMonth()+1,1);buildCalendar();document.getElementById('dayPanel').style.display='none';});
+
+/* ── View toggle ── */
+document.getElementById('listViewBtn').addEventListener('click',()=>{
+  document.getElementById('listView').style.display='block';
+  document.getElementById('calView').style.display='none';
+  document.getElementById('listViewBtn').classList.add('active');
+  document.getElementById('calViewBtn').classList.remove('active');
+});
+document.getElementById('calViewBtn').addEventListener('click',()=>{
+  document.getElementById('listView').style.display='none';
+  document.getElementById('calView').style.display='block';
+  document.getElementById('calViewBtn').classList.add('active');
+  document.getElementById('listViewBtn').classList.remove('active');
+  buildCalendar();
+});
+
+/* ── Init ── */
+updateStats();applyFilters();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-Frame-Options" content="DENY" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>MediCore HMS — Secure Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy:#0a1628; --navy2:#0f2044; --teal:#00b4a2; --teal2:#00d4bf;
+      --border:rgba(0,180,162,.18); --muted:#5d7a8f; --muted2:#8ba3b5;
+      --error:#ff5f6d; --white:#ffffff;
+    }
+    html, body { height: 100%; font-family: 'DM Sans', sans-serif; background: var(--navy); color: var(--white); overflow: hidden; }
+    .bg { position:fixed; inset:0; z-index:0;
+      background: radial-gradient(ellipse 80% 60% at 70% 20%, rgba(0,180,162,.12) 0%,transparent 65%),
+                  radial-gradient(ellipse 60% 80% at 10% 80%, rgba(0,100,200,.10) 0%,transparent 55%),
+                  linear-gradient(160deg,#0a1628 0%,#0d1e3a 50%,#071420 100%); }
+    .bg-grid { position:fixed; inset:0; z-index:0;
+      background-image: linear-gradient(rgba(0,180,162,.04) 1px,transparent 1px), linear-gradient(90deg,rgba(0,180,162,.04) 1px,transparent 1px);
+      background-size:48px 48px; mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 30%,transparent 100%); }
+    .pulse-ring { position:fixed; width:600px; height:600px; border-radius:50%;
+      border:1px solid rgba(0,180,162,.06); top:50%; left:50%;
+      transform:translate(-50%,-50%); animation:pulse 6s ease-in-out infinite; z-index:0; }
+    .pulse-ring:nth-child(2){ width:900px; height:900px; animation-delay:2s; }
+    .pulse-ring:nth-child(3){ width:1200px; height:1200px; animation-delay:4s; }
+    @keyframes pulse { 0%,100%{opacity:.4;transform:translate(-50%,-50%) scale(1)} 50%{opacity:.1;transform:translate(-50%,-50%) scale(1.03)} }
+    .ecg-wrap { position:fixed; bottom:0; left:0; right:0; z-index:1; height:80px; overflow:hidden; opacity:.18; }
+    .ecg-svg  { width:200%; height:100%; animation:ecg-move 4s linear infinite; }
+    @keyframes ecg-move { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+    .page { position:relative; z-index:2; min-height:100vh; display:grid; grid-template-columns:1fr 1fr; }
+    .left { display:flex; flex-direction:column; justify-content:center; padding:60px 64px;
+      border-right:1px solid var(--border); animation:fadeInLeft .9s cubic-bezier(.22,1,.36,1) both; }
+    @keyframes fadeInLeft { from{opacity:0;transform:translateX(-28px)} to{opacity:1;transform:translateX(0)} }
+    .brand { display:flex; align-items:center; gap:14px; margin-bottom:56px; }
+    .brand-icon { width:48px; height:48px; border-radius:12px; background:linear-gradient(135deg,var(--teal),#0097a7);
+      display:flex; align-items:center; justify-content:center; box-shadow:0 8px 24px rgba(0,180,162,.35); flex-shrink:0; }
+    .brand-name { font-family:'Playfair Display',serif; font-size:1.5rem; letter-spacing:-.01em; }
+    .brand-name span { color:var(--teal); }
+    .brand-sub { font-size:.68rem; color:var(--muted); letter-spacing:.12em; text-transform:uppercase; margin-top:1px; }
+    .hero-heading { font-family:'Playfair Display',serif; font-size:clamp(2rem,3vw,2.8rem); line-height:1.18; margin-bottom:18px; }
+    .hero-heading em { color:var(--teal); font-style:normal; }
+    .hero-sub { color:var(--muted); font-size:.95rem; line-height:1.7; max-width:360px; margin-bottom:48px; }
+    .stats { display:flex; gap:36px; }
+    .stat-num { font-family:'Playfair Display',serif; font-size:1.9rem; color:var(--teal); }
+    .stat-lbl { font-size:.72rem; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; margin-top:2px; }
+    .divider-v { width:1px; background:var(--border); }
+    .right { display:flex; flex-direction:column; justify-content:center; align-items:center; padding:60px 64px;
+      animation:fadeInRight .9s .15s cubic-bezier(.22,1,.36,1) both; }
+    @keyframes fadeInRight { from{opacity:0;transform:translateX(28px)} to{opacity:1;transform:translateX(0)} }
+    .card { width:100%; max-width:420px; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08);
+      border-radius:24px; padding:44px 40px; backdrop-filter:blur(20px); box-shadow:0 32px 80px rgba(0,0,0,.55); }
+    .card-title { font-size:1.4rem; font-weight:600; margin-bottom:4px; }
+    .card-sub { font-size:.85rem; color:var(--muted); margin-bottom:32px; }
+    .role-tabs { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:28px;
+      background:rgba(0,0,0,.25); border-radius:12px; padding:5px; }
+    .role-tab { display:flex; flex-direction:column; align-items:center; gap:4px;
+      padding:10px 8px; border-radius:8px; cursor:pointer; border:1px solid transparent;
+      transition:all .22s; font-size:.72rem; color:var(--muted2); background:none; font-family:inherit; }
+    .role-tab svg { width:18px; height:18px; }
+    .role-tab.active { background:rgba(0,180,162,.14); border-color:rgba(0,180,162,.35); color:var(--teal2); }
+    .role-tab:hover:not(.active) { color:#ccc; background:rgba(255,255,255,.05); }
+    .alert { display:none; padding:12px 16px; border-radius:10px; font-size:.83rem; margin-bottom:18px;
+      border-left:3px solid; animation:fadeDown .3s ease; }
+    .alert.error  { background:rgba(255,95,109,.1); border-color:var(--error); color:#ff8a93; }
+    .alert.success{ background:rgba(0,180,162,.1); border-color:var(--teal); color:var(--teal2); }
+    @keyframes fadeDown { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+    .form-group { margin-bottom:18px; position:relative; }
+    label { display:block; font-size:.78rem; color:var(--muted); margin-bottom:8px; letter-spacing:.04em; text-transform:uppercase; }
+    .input-wrap { position:relative; }
+    .input-wrap .icon { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--muted); pointer-events:none; }
+    input[type="text"], input[type="email"], input[type="password"] {
+      width:100%; height:48px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1);
+      border-radius:10px; color:var(--white); font-family:'DM Sans',sans-serif; font-size:.9rem;
+      padding:0 44px 0 42px; outline:none; transition:border-color .2s,background .2s,box-shadow .2s; }
+    input::placeholder { color:var(--muted); }
+    input:focus { border-color:var(--teal); background:rgba(0,180,162,.06); box-shadow:0 0 0 3px rgba(0,180,162,.12); }
+    input.error { border-color:var(--error); }
+    .icon-end { position:absolute; right:14px; top:50%; transform:translateY(-50%);
+      background:none; border:none; cursor:pointer; color:var(--muted); transition:color .2s; padding:2px; display:flex; }
+    .icon-end:hover { color:var(--teal); }
+    .field-error { font-size:.75rem; color:var(--error); margin-top:5px; display:none; }
+    .field-error.show { display:block; }
+    .captcha-box { display:flex; align-items:center; gap:12px; background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.1); border-radius:10px; padding:12px 16px; margin-bottom:18px;
+      cursor:pointer; transition:border-color .2s; user-select:none; }
+    .captcha-box:hover { border-color:rgba(0,180,162,.4); }
+    .captcha-check { width:22px; height:22px; border-radius:4px; border:2px solid var(--muted);
+      background:transparent; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .25s; }
+    .captcha-check.checked { background:var(--teal); border-color:var(--teal); }
+    .captcha-label { font-size:.84rem; color:#ccc; flex:1; }
+    .captcha-logo  { font-size:.6rem; color:var(--muted); text-align:center; line-height:1.3; }
+    .row { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; }
+    .remember { display:flex; align-items:center; gap:8px; cursor:pointer; font-size:.82rem; color:var(--muted); }
+    .remember input[type="checkbox"] { display:none; }
+    .custom-check { width:17px; height:17px; border-radius:4px; border:1.5px solid var(--muted);
+      background:transparent; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .2s; }
+    .remember input:checked + .custom-check { background:var(--teal); border-color:var(--teal); }
+    .forgot { font-size:.82rem; color:var(--teal); text-decoration:none; }
+    .forgot:hover { text-decoration:underline; }
+    .btn-login { width:100%; height:50px; background:linear-gradient(135deg,var(--teal),#0097a7);
+      border:none; border-radius:10px; color:var(--white); font-family:'DM Sans',sans-serif;
+      font-size:.95rem; font-weight:600; cursor:pointer; box-shadow:0 8px 24px rgba(0,180,162,.3);
+      transition:all .22s; position:relative; overflow:hidden; }
+    .btn-login:hover { transform:translateY(-2px); box-shadow:0 12px 32px rgba(0,180,162,.4); }
+    .btn-login:disabled { opacity:.6; cursor:not-allowed; transform:none; }
+    .btn-login .spinner { display:none; width:18px; height:18px; border:2px solid rgba(255,255,255,.3);
+      border-top-color:white; border-radius:50%; animation:spin .7s linear infinite; margin:auto; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    .btn-login.loading .btn-text { display:none; }
+    .btn-login.loading .spinner  { display:block; }
+    .secure-badge { display:flex; align-items:center; justify-content:center; gap:6px; margin-top:22px; font-size:.73rem; color:var(--muted); }
+    .secure-badge svg { color:var(--teal); }
+    @media(max-width:860px) { .page{grid-template-columns:1fr} .left{display:none} .right{padding:40px 24px} }
+  </style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="bg-grid"></div>
+<div class="pulse-ring"></div>
+<div class="pulse-ring"></div>
+<div class="pulse-ring"></div>
+<div class="ecg-wrap">
+  <svg class="ecg-svg" viewBox="0 0 1200 80" xmlns="http://www.w3.org/2000/svg">
+    <polyline fill="none" stroke="#00b4a2" stroke-width="2"
+      points="0,40 80,40 100,40 110,10 120,70 130,40 160,40 240,40 260,40 270,20 280,60 290,40 320,40 400,40 420,40 430,10 440,70 450,40 480,40 560,40 580,40 590,20 600,60 610,40 640,40 720,40 740,40 750,10 760,70 770,40 800,40 880,40 900,40 910,20 920,60 930,40 960,40 1040,40 1060,40 1070,10 1080,70 1090,40 1120,40 1200,40"/>
+  </svg>
+</div>
+
+<div class="page">
+  <div class="left">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" width="24" height="24">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-name">Medi<span>Core</span></div>
+        <div class="brand-sub">Hospital Management System</div>
+      </div>
+    </div>
+    <h1 class="hero-heading">Powering <em>smarter</em><br>healthcare, one<br>record at a time.</h1>
+    <p class="hero-sub">A unified platform for hospital staff to manage patients, schedules, diagnostics, and billing — securely and efficiently.</p>
+    <div class="stats">
+      <div><div class="stat-num">99.9%</div><div class="stat-lbl">Uptime</div></div>
+      <div class="divider-v"></div>
+      <div><div class="stat-num">256‑bit</div><div class="stat-lbl">Encryption</div></div>
+      <div class="divider-v"></div>
+      <div><div class="stat-num">HIPAA</div><div class="stat-lbl">Compliant</div></div>
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="card">
+      <h2 class="card-title">Welcome back</h2>
+      <p class="card-sub">Sign in to access your dashboard</p>
+
+      <div class="role-tabs">
+        <button class="role-tab active" data-role="doctor" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a5 5 0 1 0 0 10A5 5 0 0 0 12 2z"/><path d="M3 20c0-4 4-7 9-7s9 3 9 7"/><path d="M12 16v4M10 18h4"/></svg>
+          Doctor
+        </button>
+        <button class="role-tab" data-role="nurse" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a5 5 0 1 0 0 10A5 5 0 0 0 12 2z"/><path d="M3 20c0-4 4-7 9-7s9 3 9 7"/><circle cx="17" cy="15" r="4"/><path d="M17 13v4M15 15h4"/></svg>
+          Nurse
+        </button>
+        <button class="role-tab" data-role="admin" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Admin
+        </button>
+      </div>
+
+      <div class="alert" id="alertBox" role="alert">
+        <span id="alertMsg"></span>
+      </div>
+
+      <form id="loginForm" novalidate autocomplete="off">
+        <!-- Honeypot -->
+        <input type="text" name="website" tabindex="-1" aria-hidden="true" style="display:none!important" />
+
+        <div class="form-group">
+          <label for="emailInput">Staff ID / Email</label>
+          <div class="input-wrap">
+            <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <input type="email" id="emailInput" placeholder="your@hospital.com" maxlength="80" autocomplete="username" aria-required="true" />
+          </div>
+          <div class="field-error" id="emailErr">Please enter a valid email or staff ID.</div>
+        </div>
+
+        <div class="form-group">
+          <label for="passwordInput">Password</label>
+          <div class="input-wrap">
+            <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <input type="password" id="passwordInput" placeholder="Enter your password" maxlength="128" autocomplete="current-password" aria-required="true" />
+            <button class="icon-end" type="button" id="togglePwd" aria-label="Show password">
+              <svg id="eyeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <div class="field-error" id="pwdErr">Password must be at least 6 characters.</div>
+        </div>
+
+        <div class="captcha-box" id="captchaBox" tabindex="0" role="checkbox" aria-checked="false">
+          <div class="captcha-check" id="captchaCheck"></div>
+          <span class="captcha-label">I'm not a robot</span>
+          <div class="captcha-logo">
+            <svg width="22" height="22" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="14" stroke="#4a6278" stroke-width="2"/>
+              <path d="M10 16.5l4 4 8-8" stroke="#00b4a2" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" id="captchaTick" opacity="0"/>
+            </svg>
+            <div style="font-size:.55rem;color:#4a6278">reCAPTCHA</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <label class="remember">
+            <input type="checkbox" id="rememberMe" />
+            <div class="custom-check" id="customCheck">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            Remember this device
+          </label>
+          <a href="#" class="forgot">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="btn-login" id="loginBtn">
+          <span class="btn-text">Sign In Securely</span>
+          <div class="spinner"></div>
+        </button>
+      </form>
+
+      <div class="secure-badge">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        256-bit SSL · HIPAA Compliant · Auto-lock on idle
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/auth.js"></script>
+<script>
+(function(){
+  'use strict';
+
+  // If already logged in, skip to dashboard
+  Auth.redirectIfLoggedIn();
+
+  const MAX_ATTEMPTS = 5;
+  const LOCKOUT_MS   = 15 * 60 * 1000;
+  let attempts = 0, lockedUntil = 0, captchaOk = false, lastSubmit = 0;
+  let selectedRole = 'doctor';
+
+  const form      = document.getElementById('loginForm');
+  const emailEl   = document.getElementById('emailInput');
+  const pwdEl     = document.getElementById('passwordInput');
+  const loginBtn  = document.getElementById('loginBtn');
+  const alertBox  = document.getElementById('alertBox');
+  const alertMsg  = document.getElementById('alertMsg');
+
+  function showAlert(msg, type='error'){
+    alertBox.className = 'alert ' + type;
+    alertMsg.textContent = msg;
+    alertBox.style.display = 'block';
+  }
+  function setErr(input, errId, show){
+    const e = document.getElementById(errId);
+    input.classList.toggle('error', show);
+    e.classList.toggle('show', show);
+  }
+  function sanitize(s){ return s.replace(/[<>"'`]/g,'').replace(/javascript:/gi,'').trim(); }
+  function validEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v) || /^[a-zA-Z0-9_\-]{3,20}$/.test(v); }
+
+  // Role tabs
+  document.querySelectorAll('.role-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      selectedRole = tab.dataset.role;
+      alertBox.style.display = 'none';
+    });
+  });
+
+  // Password toggle
+  document.getElementById('togglePwd').addEventListener('click', () => {
+    const show = pwdEl.type === 'password';
+    pwdEl.type = show ? 'text' : 'password';
+    document.getElementById('eyeIcon').innerHTML = show
+      ? `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>`
+      : `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+  });
+
+  // Captcha
+  const captchaBox = document.getElementById('captchaBox');
+  const captchaChk = document.getElementById('captchaCheck');
+  function verifyCaptcha(){
+    if(captchaOk) return;
+    captchaChk.classList.add('checked');
+    document.getElementById('captchaTick').setAttribute('opacity','1');
+    captchaOk = true;
+  }
+  captchaBox.addEventListener('click', verifyCaptcha);
+  captchaBox.addEventListener('keydown', e => { if(e.key===' '||e.key==='Enter') verifyCaptcha(); });
+
+  // Remember me
+  document.getElementById('rememberMe').addEventListener('change', function(){
+    const c = document.getElementById('customCheck');
+    c.style.background    = this.checked ? 'var(--teal)' : 'transparent';
+    c.style.borderColor   = this.checked ? 'var(--teal)' : 'var(--muted)';
+  });
+
+  // Clear errors
+  emailEl.addEventListener('input', () => setErr(emailEl,'emailErr',false));
+  pwdEl.addEventListener('input',   () => setErr(pwdEl,  'pwdErr',  false));
+
+  // Honeypot
+  function honeypotTripped(){ return form.querySelector('input[name="website"]').value.length > 0; }
+
+  // ── SUBMIT ──
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    alertBox.style.display = 'none';
+
+    if(honeypotTripped()) return;
+
+    const now = Date.now();
+    if(now < lockedUntil){
+      const m = Math.ceil((lockedUntil-now)/60000);
+      showAlert(`Locked for ${m} more minute${m>1?'s':''}.`); return;
+    }
+    if(now - lastSubmit < 800) return;
+    lastSubmit = now;
+
+    const email = sanitize(emailEl.value);
+    const pwd   = sanitize(pwdEl.value);
+    let valid   = true;
+
+    if(!validEmail(email)){ setErr(emailEl,'emailErr',true); valid=false; }
+    if(pwd.length < 6)    { setErr(pwdEl,  'pwdErr',  true); valid=false; }
+    if(!captchaOk){ showAlert('Please verify you are not a robot.'); return; }
+    if(!valid) return;
+
+    loginBtn.classList.add('loading');
+    loginBtn.disabled = true;
+
+    try {
+      // ── DEMO LOGIN ──
+      // Replace this block with: const data = await API.login(email, pwd, selectedRole);
+      // Then: Auth.setSession(data.user); window.location.href = 'pages/dashboard.html';
+
+      await new Promise(r => setTimeout(r, 1200)); // simulate network
+
+      // Accept any non-empty email + password >= 6 chars for demo
+      const user = {
+        name:  email.includes('@') ? email.split('@')[0].replace(/\b\w/g, c=>c.toUpperCase()) : email,
+        email: email,
+        role:  selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1),
+        token: 'demo-token-' + Date.now(),
+      };
+
+      Auth.setSession(user);
+      showAlert('Login successful! Redirecting…', 'success');
+
+      setTimeout(() => {
+        window.location.href = 'pages/dashboard.html';
+      }, 800);
+
+    } catch(err) {
+      attempts++;
+      loginBtn.classList.remove('loading');
+      loginBtn.disabled = false;
+      if(attempts >= MAX_ATTEMPTS){
+        lockedUntil = Date.now() + LOCKOUT_MS;
+        showAlert('Too many attempts. Locked for 15 minutes.');
+      } else {
+        showAlert(`Invalid credentials. ${MAX_ATTEMPTS - attempts} attempts remaining.`);
+      }
+      pwdEl.value = '';
+      pwdEl.focus();
+    }
+  });
+
+  // Block F12
+  document.addEventListener('keydown', e => {
+    if(e.key==='F12') e.preventDefault();
+    if(e.ctrlKey && e.shiftKey && ['I','J','C'].includes(e.key)) e.preventDefault();
+  });
+})();
+</script>
+</body>
+</html>
